@@ -6,6 +6,7 @@
 	#include <unistd.h> //for close
 	#include <stdlib.h> //for exit
 	#include <string.h> //for memset
+	#include <time.h>
 	void OSInit( void )
 	{
 		WSADATA wsaData;
@@ -42,34 +43,18 @@ void cleanup( int internet_socket );
 
 int main( int argc, char * argv[] )
 {
-	//////////////////
-	//Initialization//
-	//////////////////
-
+	printf("Compiler works!\n");
 	OSInit();
-
 	int internet_socket = initialization();
-
-	/////////////
-	//Execution//
-	/////////////
-
 	execution( internet_socket );
-
-
-	////////////
-	//Clean up//
-	////////////
-
 	cleanup( internet_socket );
-
 	OSCleanup();
 
 	return 0;
 }
 
 int initialization()
-{/*
+{
 	//Step 1.1
 	struct addrinfo internet_address_setup;
 	struct addrinfo * internet_address_result;
@@ -119,39 +104,41 @@ int initialization()
 		exit( 2 );
 	}
 
-	return internet_socket; */
+	return internet_socket; 
 }
 
 void execution( int internet_socket )
-{/*
-	//Step 2.1
+{
+	srand(time(NULL));
+	
 	int number_of_bytes_received = 0;
 	char buffer[1000];
 	struct sockaddr_storage client_internet_address;
+
 	socklen_t client_internet_address_length = sizeof client_internet_address;
 	number_of_bytes_received = recvfrom( internet_socket, buffer, ( sizeof buffer ) - 1, 0, (struct sockaddr *) &client_internet_address, &client_internet_address_length );
-	if( number_of_bytes_received == -1 )
-	{
-		perror( "recvfrom" );
-	}
-	else
-	{
-		buffer[number_of_bytes_received] = '\0';
-		printf( "Received : %s\n", buffer );
+	buffer[number_of_bytes_received] = '\0';
+	//printf(buffer);
+	//printf("\n");
+	
+	if(strcmp(buffer, "GO") == 0){
+		printf("OK");
+		int number_of_bytes_send = 0;
+		int RandNumber1 = 0;
+		for(int i = 0; i < (rand() % 42); i++)
+		RandNumber1 = rand() % 150; //random nummer tussen 0 en 150 genereren
+		//GO ontvangen, stuur getallen
+		number_of_bytes_send = sendto( internet_socket, (const char *) &RandNumber1, sizeof(int) /*want getal = int*/, 0, (struct sockaddr *) &client_internet_address, client_internet_address_length );
+	
+	} else{
+		perror("GO not received");
 	}
 
-	//Step 2.2
-	int number_of_bytes_send = 0;
-	number_of_bytes_send = sendto( internet_socket, "Hello UDP world!", 16, 0, (struct sockaddr *) &client_internet_address, client_internet_address_length );
-	if( number_of_bytes_send == -1 )
-	{
-		perror( "sendto" );
-	} */
 }
 
 void cleanup( int internet_socket )
-{ /*
+{ 
 	//Step 3.1
-	close( internet_socket ); */
+	close( internet_socket ); 
 }
 
