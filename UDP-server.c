@@ -120,16 +120,23 @@ void execution( int internet_socket )
 	buffer[number_of_bytes_received] = '\0';
 	//printf(buffer);
 	//printf("\n");
-	
+	printf("received: %s\n", buffer);
 	if(strcmp(buffer, "GO") == 0){
-		printf("OK");
+		printf("OK\n");
+		
 		int number_of_bytes_send = 0;
 		int RandNumber1 = 0;
-		for(int i = 0; i < (rand() % 42); i++)
+		int SentNumber = 0;
+
+		for(int i = 0; i < 3; i++){
 		RandNumber1 = rand() % 150; //random nummer tussen 0 en 150 genereren
+		SentNumber = htons(RandNumber1);
 		//GO ontvangen, stuur getallen
-		number_of_bytes_send = sendto( internet_socket, (const char *) &RandNumber1, sizeof(int) /*want getal = int*/, 0, (struct sockaddr *) &client_internet_address, client_internet_address_length );
+		number_of_bytes_send = sendto( internet_socket, (const char *) &SentNumber, sizeof(int) /*want getal = int*/, 0, (struct sockaddr *) &client_internet_address, client_internet_address_length );
+		printf("RanNumber1 = %d. SentNumber is %d as string is: %s\n", RandNumber1, SentNumber, (const char *) &SentNumber );
+		}
 	
+			
 	} else{
 		perror("GO not received");
 	}
