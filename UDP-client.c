@@ -76,6 +76,7 @@ int initialization(struct sockaddr **internet_address, socklen_t *internet_addre
 
 void execution(int internet_socket, struct sockaddr *internet_address, socklen_t internet_address_length)
 {
+while(1){
     int received_numbers[3];
     char goMessage[] = "GO";
     ssize_t number_of_bytes_received = 0;
@@ -92,26 +93,42 @@ void execution(int internet_socket, struct sockaddr *internet_address, socklen_t
     {
 
         number_of_bytes_received = recvfrom(internet_socket,(char*) &buffer, sizeof(received_number), 0, internet_address, &internet_address_length);
-        if (number_of_bytes_received == -1)
-        {
-            perror("Error receiving data");
+         
+		if(number_of_bytes_received == -1){
+			perror("Error receiving data");
             exit(1);
-        }
+		} 
+		if (strcmp(buffer, "STOP") == 0)
+        {
+			printf("STOP RECEIVED");
+			i = 2;
+			break;
+        } else {
        buffer[number_of_bytes_received] = '\0';
     	received_number = ntohs(*(uint16_t *)buffer); //convert from network byte order
         numbers[i] = received_number;
         printf("Received number[%d]: %d\n",i,received_number);
+		}
     }
 
 	
-	int biggest_num = biggestNumber(numbers, 3);
-	printf("The biggest number is: %d\n", biggest_num);
-	
+	uint16_t biggest_num = (uint16_t)biggestNumber(numbers, 3);
 
+	printf("The biggest number is: %d\n", biggest_num); //debug print
+	printf("--------------------------\n");
+
+	//send biggest number to server
+    uint16_t network_biggest = htons(biggest_num);
+    sendto(internet_socket, (const char *) &network_biggest, sizeof(network_biggest), 0, internet_address, internet_address_length);
+
+
+	}
+	printf("--------------------\nProgram closed\n");
 }
 
 
-int biggestNumber(int *numbers, int size) { //bubble sort
+int biggestNumber(int *numbers, int size) 
+{ //bubble sort
     for (int i = 0; i < size-1; i++) {
         for (int j = 0; j < size-i-1; j++) {
             if (numbers[j] > numbers[j+1]) {
