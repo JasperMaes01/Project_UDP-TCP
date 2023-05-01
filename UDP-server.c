@@ -6,7 +6,8 @@
 	#include <unistd.h> //for close
 	#include <stdlib.h> //for exit
 	#include <string.h> //for memset
-	#include <time.h>
+	#include <time.h>   // for srand function
+	#include <stdint.h>					   //for uint16_t
 	void OSInit( void )
 	{
 		WSADATA wsaData;
@@ -43,7 +44,7 @@ void cleanup( int internet_socket );
 
 int main( int argc, char * argv[] )
 {
-	printf("Compiler works!\n");
+	//printf("Compiler works!\n");
 	OSInit();
 	int internet_socket = initialization();
 	execution( internet_socket );
@@ -122,16 +123,16 @@ void execution( int internet_socket )
 	//printf("\n");
 	printf("received: %s\n", buffer);
 	if(strcmp(buffer, "GO") == 0){
-		printf("OK\n");
+		printf("Sending numbers ...\n"); //GO ontvangen, stuur getallen
 		
 		int number_of_bytes_send = 0;
 		int RandNumber1 = 0;
-		int SentNumber = 0;
+		uint16_t SentNumber = 0;
 
 		for(int i = 0; i < 3; i++){
 		RandNumber1 = rand() % 150; //random nummer tussen 0 en 150 genereren
 		SentNumber = htons(RandNumber1);
-		//GO ontvangen, stuur getallen
+		
 		number_of_bytes_send = sendto( internet_socket, (const char *) &SentNumber, sizeof(int) /*want getal = int*/, 0, (struct sockaddr *) &client_internet_address, client_internet_address_length );
 		printf("RanNumber1 = %d. SentNumber is %d as string is: %s\n", RandNumber1, SentNumber, (const char *) &SentNumber );
 		}
@@ -145,7 +146,6 @@ void execution( int internet_socket )
 
 void cleanup( int internet_socket )
 { 
-	//Step 3.1
 	close( internet_socket ); 
 }
 

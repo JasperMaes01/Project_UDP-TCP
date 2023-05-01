@@ -6,6 +6,7 @@
 #include <unistd.h>					   //for close
 #include <stdlib.h>					   //for exit
 #include <string.h>					   //for memset
+#include <stdint.h>					   //for uint16_t
 void OSInit(void)
 {
 	WSADATA wsaData;
@@ -33,28 +34,17 @@ void OSCleanup(void) {}
 int initialization(struct sockaddr **internet_address, socklen_t *internet_address_length);
 void execution(int internet_socket, struct sockaddr *internet_address, socklen_t internet_address_length);
 void cleanup(int internet_socket, struct sockaddr *internet_address);
+int biggestNumber(int *numbers, int size);
 
 int main(int argc, char *argv[])
 {
-	//////////////////
-	// Initialization//
-	//////////////////
-
 	OSInit();
 
 	struct sockaddr *internet_address = NULL;
 	socklen_t internet_address_length = 0;
 	int internet_socket = initialization(&internet_address, &internet_address_length);
 
-	/////////////
-	// Execution//
-	/////////////
-
 	execution(internet_socket, internet_address, internet_address_length);
-
-	////////////
-	// Clean up//
-	////////////
 
 	cleanup(internet_socket, internet_address);
 
@@ -65,7 +55,6 @@ int main(int argc, char *argv[])
 
 int initialization(struct sockaddr **internet_address, socklen_t *internet_address_length)
 {
-	// Step 1.1
 	struct addrinfo internet_address_setup;
 	struct addrinfo *internet_address_result;
 	memset(&internet_address_setup, 0, sizeof internet_address_setup);
@@ -73,11 +62,9 @@ int initialization(struct sockaddr **internet_address, socklen_t *internet_addre
 	internet_address_setup.ai_socktype = SOCK_DGRAM;
 	getaddrinfo("::1", "24042", &internet_address_setup, &internet_address_result);
 
-	// Step 1.2
 	int internet_socket;
 	internet_socket = socket(internet_address_result->ai_family, internet_address_result->ai_socktype, internet_address_result->ai_protocol);
 
-	// Step 1.3
 	*internet_address_length = internet_address_result->ai_addrlen;
 	*internet_address = (struct sockaddr *)malloc(internet_address_result->ai_addrlen);
 	memcpy(*internet_address, internet_address_result->ai_addr, internet_address_result->ai_addrlen);
@@ -89,29 +76,58 @@ int initialization(struct sockaddr **internet_address, socklen_t *internet_addre
 
 void execution(int internet_socket, struct sockaddr *internet_address, socklen_t internet_address_length)
 {
-	int ReceivedNumber = 0;
-	// Step 2.1
-	sendto(internet_socket, "GO", 3, 0, internet_address, internet_address_length);
+    int received_numbers[3];
+    char goMessage[] = "GO";
+    ssize_t number_of_bytes_received = 0;
 
-	// Step 2.2
-	int number_of_bytes_received = 0;
+    //Send "GO" message
+    sendto(internet_socket, goMessage, sizeof(goMessage), 0, internet_address, internet_address_length);
+       
+	   
+	int received_number = 0;
 	char buffer[1000];
-	int numbers[42];
-	for (int i = 0; i < 3; i++)
-	{
-		number_of_bytes_received = recvfrom(internet_socket, buffer, (sizeof buffer) - 1, 0, internet_address, &internet_address_length);
-		buffer[number_of_bytes_received] = '\0';
-		//printf("Received : %s. As decimal: %d\n", buffer, buffer);
-		numbers[i] = ntohl(strtol( buffer, NULL, 10)); // strtol( const char *str, char **str_end, int base );
-		//printf("IN NTOHL: %d\n", numbers[i]);
-	}
+	int numbers[3];
+    //Receive 3 integers
+    for (int i = 0; i < 3; i++)
+    {
+
+        number_of_bytes_received = recvfrom(internet_socket,(char*) &buffer, sizeof(received_number), 0, internet_address, &internet_address_length);
+        if (number_of_bytes_received == -1)
+        {
+            perror("Error receiving data");
+            exit(1);
+        }
+       buffer[number_of_bytes_received] = '\0';
+    	received_number = ntohs(*(uint16_t *)buffer); //convert from network byte order
+        numbers[i] = received_number;
+        printf("Received number[%d]: %d\n",i,received_number);
+    }
+
+	
+	int biggest_num = biggestNumber(numbers, 3);
+	printf("The biggest number is: %d\n", biggest_num);
+	
+
 }
+
+
+int biggestNumber(int *numbers, int size) { //bubble sort
+    for (int i = 0; i < size-1; i++) {
+        for (int j = 0; j < size-i-1; j++) {
+            if (numbers[j] > numbers[j+1]) {
+                int temp = numbers[j];
+                numbers[j] = numbers[j+1];
+                numbers[j+1] = temp;
+            }
+        }
+    }
+    return numbers[size-1];
+}
+
 
 void cleanup(int internet_socket, struct sockaddr *internet_address)
 {
-	// Step 3.2
 	free(internet_address);
 
-	// Step 3.1
 	close(internet_socket);
 }
