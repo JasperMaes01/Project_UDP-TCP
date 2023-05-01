@@ -110,38 +110,65 @@ int initialization()
 
 void execution( int internet_socket )
 {
+	struct sockaddr_storage client_internet_address;
+	socklen_t client_internet_address_length = sizeof client_internet_address;
+
 	srand(time(NULL));
-	
+	int loopTimes = 1 + rand() % 5; //random aantal keren loopen (max = 6, min = 1)
+
+
+	while(loopTimes > 0)
+	{ 
+
+	printf("---------------------------------------\n");
+	printf("Remaining attempts: %d\n", loopTimes);
+
+// Start receive
 	int number_of_bytes_received = 0;
 	char buffer[1000];
-	struct sockaddr_storage client_internet_address;
-
-	socklen_t client_internet_address_length = sizeof client_internet_address;
 	number_of_bytes_received = recvfrom( internet_socket, buffer, ( sizeof buffer ) - 1, 0, (struct sockaddr *) &client_internet_address, &client_internet_address_length );
 	buffer[number_of_bytes_received] = '\0';
-	//printf(buffer);
-	//printf("\n");
-	printf("received: %s\n", buffer);
+// End receive
+
+	//printf("received: %s\n", buffer); //for debugging
+
 	if(strcmp(buffer, "GO") == 0){
-		printf("Sending numbers ...\n"); //GO ontvangen, stuur getallen
+		//printf("Sending numbers ...\n\n"); //GO ontvangen, stuur getallen
 		
+		//init vars
 		int number_of_bytes_send = 0;
 		int RandNumber1 = 0;
 		uint16_t SentNumber = 0;
 
 		for(int i = 0; i < 3; i++){
 		RandNumber1 = rand() % 150; //random nummer tussen 0 en 150 genereren
-		SentNumber = htons(RandNumber1);
 		
+		//Start send
+		SentNumber = htons(RandNumber1); //convert to network byte order
 		number_of_bytes_send = sendto( internet_socket, (const char *) &SentNumber, sizeof(int) /*want getal = int*/, 0, (struct sockaddr *) &client_internet_address, client_internet_address_length );
-		printf("RanNumber1 = %d. SentNumber is %d as string is: %s\n", RandNumber1, SentNumber, (const char *) &SentNumber );
+		//Stop send
+
+		printf("Sent number [%d] = %d\n",i, RandNumber1);
 		}
 	
-			
+	// Start biggestNumber receive
+	int number_of_bytes_received2 = 0;
+	char buffer2[1000];
+	number_of_bytes_received2 = recvfrom( internet_socket, buffer, ( sizeof buffer ) - 1, 0, (struct sockaddr *) &client_internet_address, &client_internet_address_length );
+	buffer2[number_of_bytes_received2] = '\0';
+	// Stop biggestNumber receive
+
+	int receivedBiggest = ntohs(*(uint16_t *)buffer); //convert from network byte order
+			printf("\nReceived biggest number = %d\n", receivedBiggest);
 	} else{
 		perror("GO not received");
 	}
 
+	loopTimes--;
+	}
+	char stopMessage[] = "STOP";
+	int number_of_bytes_send3 = 0;
+	number_of_bytes_send3 = sendto( internet_socket, stopMessage, sizeof(stopMessage), 0, (struct sockaddr *) &client_internet_address, client_internet_address_length );
 }
 
 void cleanup( int internet_socket )
